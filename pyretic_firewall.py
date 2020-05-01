@@ -28,23 +28,28 @@
 
 from pyretic.lib.corelib import *
 from pyretic.lib.std import *
+import csv
+import os
 
 # insert the name of the module and policy you want to import
-from pyretic.examples.<....> import <....>
+from pyretic.examples.pyretic_switch import act_like_switch
+
 policy_file = "%s/pyretic/pyretic/examples/firewall-policies.csv" % os.environ[ 'HOME' ]
 
 def main():
-    # start with a policy that doesn't match any packets
-    not_allowed = none
-    # and add traffic that isn't allowed
-    for <each pair of MAC address in firewall-policies.csv>:
-        not_allowed = not_allowed + ( <traffic going in one direction> ) + ( <traffic going in the other direction> )
+    with open(policy_file,'r') as f:
+        reader = csv.reader(f)
+        # start with a policy that doesn't match any packets
+        not_allowed = none
+        # and add traffic that isn't allowed
+        for i in reader:
+            not_allowed = not_allowed + (match(srcmac=MAC(i[1]))&match(dstmac=MAC(i[2]))) + (match(srcmac=MAC(i[2]))&match(dstmac=MAC(i[1])))
 
-    # express allowed traffic in terms of not_allowed - hint use '~'
-    allowed = <...>
+        # express allowed traffic in terms of not_allowed - hint use '~'
+        allowed = ~not_allowed
 
-    # and only send allowed traffic to the mac learning (act_like_switch) logic
-    return allowed >> act_like_switch()
+        # and only send allowed traffic to the mac learning (act_like_switch) logic
+        return allowed >> act_like_switch()
 
 
 
